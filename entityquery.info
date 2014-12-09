@@ -1,0 +1,4 @@
+name = entityquery
+description = Shows how to use entity query to fetch data from drupal
+package = Custom
+core = 7.x

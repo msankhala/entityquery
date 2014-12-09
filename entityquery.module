@@ -1,0 +1,112 @@
+<?php
+/**
+ * @file
+ * custom entityquery module.
+ */
+
+/**
+ * Implement hook_node_info().
+ */
+function entityquery_node_info() {
+  return array(
+    'product' => array(
+      'name' => t('Product'),
+      'base' => 'product',
+      'description' => t('You can define new Products here'),
+      'has_title' => TRUE,
+      'title_label' => t('Product title')
+      ),
+    'movies' => array(
+      'name' => t('Movies'),
+      'base' => 'movies',
+      'description' => t('You can define new Movies here'),
+      'has_title' => TRUE,
+      'title_label' => t('Movie title')
+      ),
+    'books' => array(
+      'name' => t('Books'),
+      'base' => 'Books',
+      'description' => t('You can define new Books here'),
+      'has_title' => TRUE,
+      'title_label' => t('Books title')
+      )
+    );
+}
+
+/**
+ * Implement hook_form()
+ */
+function product_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+/**
+ * Implement hook_form()
+ */
+function movies_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+/**
+ * Implement hook_form()
+ */
+function books_form($node, $form_state) {
+  return node_content_form($node, $form_state);
+}
+
+/**
+ * Implement hook_block_info().
+ */
+function entityquery_block_info() {
+  $blocks = array();
+
+  $blocks['entityqueryblock'] = array(
+    'info' => t('A block to display results from entityquery'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implement hook_block_view().
+ */
+function entityquery_block_view($block_name = '') {
+  if ($block_name == 'entityqueryblock') {
+    $content = '';
+
+    $query = new EntityFieldQuery();
+    $query
+    // Adding entity conditions to EntityFieldQuery.
+    ->entityCondition('entity_type', 'node')
+    // Single bundle as string
+    // ->entityCondition('bundle', 'product');
+    ->entityCondition('bundle', array('product', 'movies'))
+    // Adding property conditions to EntityFieldQuery.
+    ->propertyCondition('status', 1)
+    // Adding field conditions to EntityFieldQuery and ordering.
+    // ->fieldCondition('body', 'value', 'discount', 'CONTAINS')
+    ->propertyOrderBy('created', 'DESC');
+
+    $result = $query->execute();
+    $nodes = array();
+    if (isset($result['node'])) {
+      $nids = array_keys($result['node']);
+      $nodes = node_load_multiple($nids);
+    }
+
+    $list = array();
+    foreach ($nodes as $node) {
+      $options = array('absolute' => TRUE);
+      $url = url('node/' . $node->nid, $options);
+      $list[] = '<a href=' . $url . '>' . $node->title . '</a>';
+    }
+    $theme_args = array('items' => $list, 'type' => 'ol');
+    $content = theme('item_list', $theme_args);
+
+    $block = array(
+      'subject' => t('A block to display results from entityquery'),
+      'content' => $content,
+    );
+    return $block;
+  }
+}
